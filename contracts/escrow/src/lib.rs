@@ -2,6 +2,9 @@
 
 use soroban_sdk::{contract, contractimpl, contracttype, Address, Env, Symbol, Vec};
 
+mod utils;
+use utils::now_seconds;
+
 #[contracttype]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum ContractStatus {
@@ -16,6 +19,7 @@ pub enum ContractStatus {
 pub struct Milestone {
     pub amount: i128,
     pub released: bool,
+    pub deadline: u64,
 }
 
 #[contract]
@@ -46,6 +50,24 @@ impl Escrow {
     pub fn release_milestone(_env: Env, _contract_id: u32, _milestone_id: u32) -> bool {
         // Release payment for the given milestone.
         true
+    }
+
+    /// Check if a milestone has expired based on its deadline.
+    /// Returns true if the current ledger time exceeds the deadline.
+    pub fn is_milestone_expired(env: Env, deadline: u64) -> bool {
+        now_seconds(&env) > deadline
+    }
+
+    /// Schedule a milestone with a deadline (in seconds from now).
+    /// Returns the absolute timestamp when the milestone expires.
+    pub fn schedule_milestone(env: Env, duration_seconds: u64) -> u64 {
+        now_seconds(&env) + duration_seconds
+    }
+
+    /// Check if a contract is within its dispute window.
+    /// Returns true if current time is before the dispute deadline.
+    pub fn can_dispute(env: Env, dispute_deadline: u64) -> bool {
+        now_seconds(&env) <= dispute_deadline
     }
 
     /// Issue a reputation credential for the freelancer after contract completion.
